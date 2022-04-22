@@ -2,9 +2,9 @@ package com.pbtan.movies.exceptions;
 
 import org.springframework.http.HttpStatus;
 
-public class MovieAlreadyExistsException extends MovieException {
+public class MovieTitleIsEmptyException extends MovieException {
 
-    public MovieAlreadyExistsException(String message) {
+    public MovieTitleIsEmptyException(String message) {
         super(message);
         httpStatus = HttpStatus.CONFLICT;
     }

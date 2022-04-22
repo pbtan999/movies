@@ -17,7 +17,6 @@ public class MovieConfig {
                     "Historical romantic drama",
                     "Leonardo DiCaprio, Tobey Maguire, Carey Mulligan, Joel Edgerton, Jason Clarke, Isla Fisher, Elizabeth Debicki",
                     "A writer and wall street trader, Nick, finds himself drawn to the past and lifestyle of his millionaire neighbor, Jay Gatsby.");
-
             movieRepository.saveAll(List.of(gatsby));
         };
     }

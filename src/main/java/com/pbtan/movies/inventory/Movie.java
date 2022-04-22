@@ -1,5 +1,7 @@
 package com.pbtan.movies.inventory;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -11,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
+@JsonDeserialize(using = MovieDeserializer.class)
 @Entity
 @Table
 public class Movie {
@@ -30,52 +33,68 @@ public class Movie {
     private String category;
     private String actors;
     private String description;
-    @Transient
-    private PriceClass priceClass;
     private BigDecimal price;
+    private boolean rented;
+    private int weeksRented;
 
 
+    /**
+     * Movie class. Price is calculated automatically.
+     *
+     * @param title
+     * @param releaseYear
+     * @param releaseMonth
+     * @param releaseDay
+     * @param category
+     * @param actors
+     * @param description
+     */
     public Movie(String title,
-                 Integer releaseYear,
-                 Integer releaseMonth,
-                 Integer releaseDay,
+                 int releaseYear,
+                 int releaseMonth,
+                 int releaseDay,
                  String category,
                  String actors,
                  String description) {
         this.title = title;
-        //System.out.println("DEBUG" + "y" + releaseYear + " d" + releaseDay + " m" + releaseMonth);
         // TODO json schema
-        Integer year = releaseYear;
-        Integer month = releaseMonth;
-        Integer day = releaseDay;
-        //this.releaseDate = LocalDate.of(year, month, day);
         this.category = category;
         this.actors = actors;
         this.description = description;
-        calculatePrice();
+        this.releaseDate = LocalDate.of(releaseYear, releaseMonth, releaseDay);
+        this.rented = false;
+        this.weeksRented = 0;
+        calculatePrice(LocalDate.now());
     }
 
     public Movie() {
     }
 
     /**
-     * Calculates which price category the movie falls into. Adjusts movie price accordingly.
+     * Calculates which price category the movie falls into and returns price for a week.
+     *
+     * If price class changes mid-week, the price is still calculated using previous price class.
+     *
+     * @param currentDate date on which the price is calculated
+     * @return price for a week
      */
-    private void calculatePrice() {
-        // TODO null localdate
-        //this.releaseDate = LocalDate.of(2011, 10, 3);
-        LocalDate currentDate = LocalDate.now();
+    public BigDecimal calculatePrice(LocalDate currentDate) {
         long weeksFromReleaseDate = ChronoUnit.WEEKS.between(releaseDate, currentDate);
+        PriceClass priceClass;
         if (PriceClass.OLD.getWeeksFromRelease() < weeksFromReleaseDate) {
-            this.priceClass = PriceClass.OLD;
+            priceClass = PriceClass.OLD;
         }
         else if (PriceClass.REGULAR.getWeeksFromRelease() < weeksFromReleaseDate) {
-            this.priceClass = PriceClass.REGULAR;
+            priceClass = PriceClass.REGULAR;
         }
         else {
-            this.priceClass = PriceClass.NEW;
+            priceClass = PriceClass.NEW;
         }
-        this.price = this.priceClass.getPrice();
+        return priceClass.getPrice();
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public String getTitle() {
@@ -84,7 +103,6 @@ public class Movie {
 
     public LocalDate getReleaseDate() {
         return releaseDate;
-        //return LocalDate.of(2011, 10, 3);
     }
 
     public String getCategory() {
@@ -99,8 +117,44 @@ public class Movie {
         return description;
     }
 
+    /**
+     * Get current price of movie (for 1 week).
+     * @return current price
+     */
     public BigDecimal getPrice() {
-        //TODO calculate price each time
+        this.price = calculatePrice(LocalDate.now());
         return price;
+    }
+
+    public boolean isRented() {
+        return rented;
+    }
+
+    public void setReleaseDate(LocalDate newDate) {
+        releaseDate = newDate;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public void setActors(String actors) {
+        this.actors = actors;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void rent(int periodInWeeks) {
+        // TODO
+        if (!this.rented) {
+            this.rented = true;
+            this.weeksRented += periodInWeeks;
+        }
     }
 }

@@ -1,19 +1,17 @@
 package com.pbtan.movies.inventory;
 
-import com.pbtan.movies.exceptions.MovieAlreadyExistsException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pbtan.movies.exceptions.*;
+import com.pbtan.movies.requests.UpdateMovieRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @RestController
-@RequestMapping(path = "api/movies")
+@RequestMapping(path = "api/inventory")
 public class MovieController {
 
     private final MovieService movieService;
@@ -33,6 +31,11 @@ public class MovieController {
         return movieService.getMoviesSortedByCategory();
     }
 
+    @GetMapping(path = "rented")
+    public List<Movie> getRentedMovies() {
+        return movieService.getRentedMovies();
+    }
+
     @PostMapping
     public void addNewMovie(@RequestBody Movie movie) {
         // TODO response 200, JSON SCHEMA
@@ -40,11 +43,40 @@ public class MovieController {
             movieService.addNewMovie(movie);
         } catch (MovieAlreadyExistsException e) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, e.getMessage()
+                    e.getHttpStatus(), e.getMessage()
+            );
+        }
+    }
+
+    @PutMapping(path = {"{movieId}"})
+    public void updateMovie(@PathVariable("movieId") Long movieId,
+                            @RequestBody UpdateMovieRequest request) {
+        try {
+            movieService.updateMovie(movieId,
+                    request.getTitle(),
+                    request.getReleaseYear(), request.getReleaseMonth(), request.getReleaseDay(),
+                    request.getCategory(),
+                    request.getActors(),
+                    request.getDescription());
+        } catch (MovieException e) {
+            throw new ResponseStatusException(
+                    e.getHttpStatus(), e.getMessage()
+            );
+        }
+    }
+
+    @DeleteMapping(path = "{movieId}")
+    public void deleteMovie(@PathVariable Long movieId) {
+        try {
+            movieService.deleteMovie(movieId);
+        } catch (MovieDoesNotExistException e) {
+            throw new ResponseStatusException(
+                    e.getHttpStatus(), e.getMessage()
             );
         }
     }
 }
+
 /*
 POST request example
 {
