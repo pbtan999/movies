@@ -5,6 +5,7 @@ Setup postgre sql database before running.
 
 
 **Intellij http request example (no tests yet):**
+
 // Inventory side
 ###
 POST http://localhost:8080/api/inventory
