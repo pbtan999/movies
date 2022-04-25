@@ -1,6 +1,8 @@
 package com.pbtan.movies.inventory;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.pbtan.movies.exceptions.MovieAlreadyRentedException;
+import com.sun.istack.NotNull;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -57,7 +59,6 @@ public class Movie {
                  String actors,
                  String description) {
         this.title = title;
-        // TODO json schema
         this.category = category;
         this.actors = actors;
         this.description = description;
@@ -150,11 +151,12 @@ public class Movie {
         this.description = description;
     }
 
-    public void rent(int periodInWeeks) {
-        // TODO
+    public void rent(int periodInWeeks) throws MovieAlreadyRentedException {
         if (!this.rented) {
             this.rented = true;
             this.weeksRented += periodInWeeks;
+        } else {
+            throw new MovieAlreadyRentedException("Movie with id " + id + " is already rented");
         }
     }
 }

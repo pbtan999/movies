@@ -1,5 +1,6 @@
 package com.pbtan.movies.inventory;
 
+import com.pbtan.movies.exceptions.IncorrectDateException;
 import com.pbtan.movies.exceptions.MovieActorsIsEmptyException;
 import com.pbtan.movies.exceptions.MovieAlreadyExistsException;
 import com.pbtan.movies.exceptions.MovieCategoryIsEmptyException;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -31,13 +33,15 @@ public class MovieService {
     /**
      * Add new movie, movies are considered unique by their title.
      * @param movie to add
+     * @return new movie id
      */
-    public void addNewMovie(Movie movie) throws MovieAlreadyExistsException {
+    public Long addNewMovie(Movie movie) throws MovieAlreadyExistsException {
         if (movieRepository.findByTitle(movie.getTitle())
                 .isPresent()) {
             throw new MovieAlreadyExistsException("Movie exists");
         }
         movieRepository.save(movie);
+        return movie.getId();
     }
 
     public List<Movie> getMoviesSortedByCategory() {
@@ -72,7 +76,8 @@ public class MovieService {
             MovieTitleIsUsedException,
             MovieTitleIsEmptyException,
             MovieActorsIsEmptyException,
-            MovieDescriptionIsEmptyException {
+            MovieDescriptionIsEmptyException,
+            IncorrectDateException {
 
         Movie existingMovie = movieRepository.findById(movieId)
                 .orElseThrow(
@@ -89,25 +94,28 @@ public class MovieService {
             existingMovie.setTitle(title);
         }
 
-        // TODO localdate negative or in the future, day > 30
         LocalDate oldDate = existingMovie.getReleaseDate();
-        if (releaseYear != null) {
-            LocalDate newDate = LocalDate.of(releaseYear,
-                    oldDate.getMonth(),
-                    oldDate.getDayOfMonth());
-            existingMovie.setReleaseDate(newDate);
-        }
-        if (releaseMonth != null) {
-            LocalDate newDate = LocalDate.of(oldDate.getYear(),
-                    releaseMonth,
-                    oldDate.getDayOfMonth());
-            existingMovie.setReleaseDate(newDate);
-        }
-        if (releaseDay != null) {
-            LocalDate newDate = LocalDate.of(oldDate.getYear(),
-                    oldDate.getMonth(),
-                    releaseDay);
-            existingMovie.setReleaseDate(newDate);
+        try {
+            if (releaseYear != null) {
+                LocalDate newDate = LocalDate.of(releaseYear,
+                        oldDate.getMonth(),
+                        oldDate.getDayOfMonth());
+                existingMovie.setReleaseDate(newDate);
+            }
+            if (releaseMonth != null) {
+                LocalDate newDate = LocalDate.of(oldDate.getYear(),
+                        releaseMonth,
+                        oldDate.getDayOfMonth());
+                existingMovie.setReleaseDate(newDate);
+            }
+            if (releaseDay != null) {
+                LocalDate newDate = LocalDate.of(oldDate.getYear(),
+                        oldDate.getMonth(),
+                        releaseDay);
+                existingMovie.setReleaseDate(newDate);
+            }
+        } catch (DateTimeException e) {
+            throw new IncorrectDateException(e.getMessage());
         }
 
         if (category != null) {
@@ -142,5 +150,9 @@ public class MovieService {
 
     public List<Movie> getRentedMovies() {
         return movieRepository.findAllByRentedTrue();
+    }
+
+    public List<Movie> getMoviesSortedByPopularity() {
+        return movieRepository.findByOrderByWeeksRentedDesc();
     }
 }

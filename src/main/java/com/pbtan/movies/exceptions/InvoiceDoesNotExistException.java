@@ -2,11 +2,10 @@ package com.pbtan.movies.exceptions;
 
 import org.springframework.http.HttpStatus;
 
-public class MovieDoesNotExistException extends CustomException {
+public class InvoiceDoesNotExistException extends CustomException {
 
-    public MovieDoesNotExistException(String message) {
+    public InvoiceDoesNotExistException(String message) {
         super(message);
         httpStatus = HttpStatus.NOT_FOUND;
     }
-
 }

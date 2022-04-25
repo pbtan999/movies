@@ -1,13 +1,23 @@
 package com.pbtan.movies.inventory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pbtan.movies.exceptions.*;
+import com.pbtan.movies.exceptions.MovieAlreadyExistsException;
+import com.pbtan.movies.exceptions.MovieDoesNotExistException;
+import com.pbtan.movies.exceptions.CustomException;
 import com.pbtan.movies.requests.UpdateMovieRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -31,16 +41,25 @@ public class MovieController {
         return movieService.getMoviesSortedByCategory();
     }
 
+    @GetMapping(path = "popularity")
+    public List<Movie> getMoviesSortedByPopularity() {
+        return movieService.getMoviesSortedByPopularity();
+    }
+
     @GetMapping(path = "rented")
     public List<Movie> getRentedMovies() {
         return movieService.getRentedMovies();
     }
 
+    /**
+     * Add new movie to database.
+     * @param movie new movie
+     * @return new movie id
+     */
     @PostMapping
-    public void addNewMovie(@RequestBody Movie movie) {
-        // TODO response 200, JSON SCHEMA
+    public Long addNewMovie(@RequestBody Movie movie) {
         try {
-            movieService.addNewMovie(movie);
+            return movieService.addNewMovie(movie);
         } catch (MovieAlreadyExistsException e) {
             throw new ResponseStatusException(
                     e.getHttpStatus(), e.getMessage()
@@ -48,7 +67,7 @@ public class MovieController {
         }
     }
 
-    @PutMapping(path = {"{movieId}"})
+    @PatchMapping(path = {"{movieId}"})
     public void updateMovie(@PathVariable("movieId") Long movieId,
                             @RequestBody UpdateMovieRequest request) {
         try {
@@ -58,7 +77,7 @@ public class MovieController {
                     request.getCategory(),
                     request.getActors(),
                     request.getDescription());
-        } catch (MovieException e) {
+        } catch (CustomException e) {
             throw new ResponseStatusException(
                     e.getHttpStatus(), e.getMessage()
             );

@@ -1,5 +1,8 @@
 package com.pbtan.movies.checkout;
 
+import com.pbtan.movies.exceptions.IncorrectRentPeriodException;
+import com.pbtan.movies.exceptions.InvoiceDoesNotExistException;
+import com.pbtan.movies.exceptions.MovieAlreadyRentedException;
 import com.pbtan.movies.exceptions.MovieDoesNotExistException;
 import com.pbtan.movies.inventory.Movie;
 import com.pbtan.movies.inventory.MovieRepository;
@@ -11,37 +14,39 @@ import javax.transaction.Transactional;
 @Service
 public class CheckoutService {
 
-    private final Invoice currentInvoice;
+    private final InvoiceRepository invoiceRepository;
     private final MovieRepository movieRepository;
 
     @Autowired
-    public CheckoutService(Invoice currentInvoice, MovieRepository movieRepository) {
-        this.currentInvoice = currentInvoice;
+    public CheckoutService(InvoiceRepository invoiceRepository, MovieRepository movieRepository) {
+        this.invoiceRepository = invoiceRepository;
         this.movieRepository = movieRepository;
     }
 
-    public Invoice getCurrentInvoice() {
-        return currentInvoice;
+    public Invoice findInvoiceById(Long id) throws InvoiceDoesNotExistException {
+        return invoiceRepository.findById(id)
+                .orElseThrow(
+                        () -> new InvoiceDoesNotExistException("Invoice with id " + id + " does not exist")
+                );
     }
 
-    // TODO transactional cause changes movie rented weeks property?
     @Transactional
-    public void addToInvoice(Long movieId, int weeks) throws MovieDoesNotExistException {
+    public void addToInvoice(Long invoiceId, Long movieId, int weeks) throws InvoiceDoesNotExistException,
+            MovieDoesNotExistException, MovieAlreadyRentedException, IncorrectRentPeriodException{
+        Invoice invoice = findInvoiceById(invoiceId);
         Movie movie = movieRepository.findById(movieId)
                 .orElseThrow(
-                        () -> new MovieDoesNotExistException("Movie with id " + movieId + " doesn't exist in database")
+                        () -> new MovieDoesNotExistException("Movie with id " + movieId + " doesn't exist")
                 );
-        // TODO negative weeks
-        currentInvoice.rentMovie(movie, weeks);
+        if (weeks <= 0) {
+            throw new IncorrectRentPeriodException("Rent period must be greater than 0");
+        }
+        invoice.rentMovie(movie, weeks);
     }
 
-    public void removeFromInvoice(Long movieId) {
-        // TODO nullpointerex
-        currentInvoice.getFields().remove(movieId);
-        // TODO movie is rented = false
-    }
-
-    public void clearInvoice() {
-        currentInvoice.getFields().clear();
+    public Long createInvoice() {
+        Invoice invoice = new Invoice();
+        invoiceRepository.save(invoice);
+        return invoice.getId();
     }
 }

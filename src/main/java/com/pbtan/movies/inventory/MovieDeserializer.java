@@ -11,9 +11,9 @@ import java.io.IOException;
 
 public class MovieDeserializer extends JsonDeserializer<Movie> {
 
-//TODO int null
     @Override
     public Movie deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+        // TODO validate data
         ObjectCodec oc = jsonParser.getCodec();
         JsonNode node = oc.readTree(jsonParser);
         return new Movie(node.get("title").textValue(),

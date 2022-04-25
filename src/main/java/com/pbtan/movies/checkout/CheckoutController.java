@@ -1,7 +1,9 @@
 package com.pbtan.movies.checkout;
 
+import com.pbtan.movies.exceptions.InvoiceDoesNotExistException;
 import com.pbtan.movies.exceptions.MovieDoesNotExistException;
 import com.pbtan.movies.requests.AddToInvoiceRequest;
+import com.pbtan.movies.requests.RemoveFromInvoiceRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,33 +25,30 @@ public class CheckoutController {
         this.checkoutService = checkoutService;
     }
 
-    @GetMapping
-    public Invoice getCurrentInvoice() {
-        // TODO serializer
-        return checkoutService.getCurrentInvoice();
+    @GetMapping(path = "{invoiceId}")
+    public Invoice getInvoice(@PathVariable Long invoiceId) {
+        return checkoutService.findInvoiceById(invoiceId);
     }
 
-    @PostMapping(path = "{movieId}")
-    public void addToInvoice(@PathVariable Long movieId,
+    @PostMapping(path = "{invoiceId}")
+    public void addToInvoice(@PathVariable Long invoiceId,
                              @RequestBody AddToInvoiceRequest request) {
+        // TODO request validation
         try {
-            // TODO weeks null
-            checkoutService.addToInvoice(movieId, request.getWeeks());
-        } catch (MovieDoesNotExistException e) {
+            checkoutService.addToInvoice(invoiceId, request.getMovieId(), request.getWeeks());
+        } catch (InvoiceDoesNotExistException | MovieDoesNotExistException e) {
             throw new ResponseStatusException(
                     e.getHttpStatus(), e.getMessage()
             );
         }
     }
 
-    @DeleteMapping(path = "{movieId}")
-    public void removeFromInvoice(@PathVariable Long movieId) {
-        checkoutService.removeFromInvoice(movieId);
+    /**
+     * Create new invoice.
+     * @return new invoice id
+     */
+    @PostMapping(path = "new")
+    public Long createInvoice() {
+        return checkoutService.createInvoice();
     }
-
-    @DeleteMapping(path = "clear")
-    public void clearInvoice() {
-        checkoutService.clearInvoice();
-    }
-
 }

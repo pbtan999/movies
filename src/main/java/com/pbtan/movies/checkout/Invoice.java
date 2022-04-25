@@ -2,16 +2,46 @@ package com.pbtan.movies.checkout;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.pbtan.movies.inventory.Movie;
-import org.springframework.stereotype.Component;
 
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.Map;
 
 @JsonSerialize(using = InvoiceSerializer.class)
-@Component
+@Entity
+@Table
 public class Invoice {
-    private HashMap<Long, BigDecimal> fields;
+    @Id
+    @SequenceGenerator(
+            name = "invoice_sequence",
+            sequenceName = "invoice_sequence",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "invoice_sequence"
+    )
+    @Column(name = "id")
+    private Long id;
+
+    @ElementCollection
+    @CollectionTable(name = "invoice_movie_mapping",
+            joinColumns = {@JoinColumn(name = "invoice_id", referencedColumnName = "id")})
+    @MapKeyColumn(name = "movie_id")
+    @Column(name = "subtotal")
+    private Map<Long, BigDecimal> fields;
 
     public Invoice() {
         fields = new HashMap<>();
@@ -25,14 +55,17 @@ public class Invoice {
                     movie.calculatePrice(currentDate.plusWeeks(i))
             );
         }
-        // TODO compute if absent
         BigDecimal finalTotalPrice = totalPrice;
         fields.computeIfPresent(movie.getId(), (k, v) -> v.add(finalTotalPrice));
         fields.computeIfAbsent(movie.getId(), k -> finalTotalPrice);
         movie.rent(periodInWeeks);
     }
 
-    public HashMap<Long, BigDecimal> getFields() {
+    public Map<Long, BigDecimal> getFields() {
         return fields;
+    }
+
+    public Long getId() {
+        return id;
     }
 }

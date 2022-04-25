@@ -2,11 +2,11 @@ package com.pbtan.movies.exceptions;
 
 import org.springframework.http.HttpStatus;
 
-public abstract class MovieException extends RuntimeException {
+public abstract class CustomException extends RuntimeException {
 
     protected HttpStatus httpStatus;
 
-    public MovieException(String message) {
+    public CustomException(String message) {
         super(message);
     }
 
